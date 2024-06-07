@@ -20,7 +20,7 @@ const metadataItem = (id, keyname, parentId, x=(Math.random() * 800), y=(Math.ra
 })
 
 
-const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLeave}) => {
+const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLeave, setToFromLocs}) => {
   return display ? (
       <>
       {/* Corners */}
@@ -31,9 +31,9 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           fill="rgba(0, 0, 0, .25)"
           stroke="white"
           strokeWidth={2}
-          draggable
           listening={true}
           onDragEnd={(e) => callback(e)}
+          onClick={(e) => setToFromLocs(node.id)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
@@ -45,8 +45,8 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           fill="rgba(0, 0, 0, .25)"
           stroke="white"
           strokeWidth={2}
-          draggable
           onDragEnd={(e) => callback(e)}
+          onClick={(e) => setToFromLocs(node.id)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
@@ -58,8 +58,8 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           fill="rgba(0, 0, 0, .25)"
           stroke="white"
           strokeWidth={2}
-          draggable
           onDragEnd={(e) => callback(e)}
+          onClick={(e) => setToFromLocs(node.id)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
@@ -71,8 +71,8 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           fill="rgba(0, 0, 0, .25)"
           stroke="white"
           strokeWidth={2}
-          draggable
           onDragEnd={(e) => callback(e)}
+          onClick={(e) => setToFromLocs(node.id)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseLeave={onMouseLeave}
           onMouseEnter={onMouseEnter}
@@ -147,6 +147,7 @@ const App = ({ itemId = 0}) => {
   const [handlesVisibleId, setHandlesVisibleId] = useState(null);
   const [handlesPosition, setHandlesPosition] = useState({ x: 0, y: 0 });
   const [connectingShapeId, setConnectingShapeId] = useState(null);
+  const [toFrom, setToFrom] = useState([null, null])
 
   const transformerRef = useRef(null);
 
@@ -225,7 +226,6 @@ const App = ({ itemId = 0}) => {
     });
   };
 
-
   // Function to handle shape transformation
   const handleTransformEnd = (id, e) => {
     console.log(id, e)
@@ -261,7 +261,6 @@ const App = ({ itemId = 0}) => {
       return prevShapes;
     });
   };
-
 
   // Function to add a parent-child connection
   const addConnection = (fromId, toId) => {
@@ -312,6 +311,31 @@ const App = ({ itemId = 0}) => {
     setHandlesVisibleId(shape.attrs.id);
     setConnectingShapeId(null);
   };
+
+  const setToFromLocs = (id) => {
+    if (id && !toFrom.includes(id)) {
+      if (!toFrom[0]) {
+        setToFrom([
+          id,
+          null
+        ])
+      } else if (!toFrom[1]) {
+        setToFrom([
+          toFrom[0],
+          id
+        ])
+      } else {
+        setToFrom([null, null])
+      }
+    }
+  }
+
+  useEffect(() => {
+    console.log(toFrom)
+    if (toFrom[0] && toFrom[1]) {
+      addConnection(...toFrom)
+    }
+  }, [toFrom])
 
   useEffect(() => {
     if (itemId === 0) {
@@ -416,6 +440,7 @@ const App = ({ itemId = 0}) => {
 
         <ConnectionHandlerBox
           node={node}
+          setToFromLocs={setToFromLocs}
           callback={handleConnectionEnd}
           display={handlesVisibleId === node.id}
           onMouseEnter={(e) => {
