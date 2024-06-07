@@ -3,6 +3,11 @@ import { Text, Stage, Layer, Rect, Circle, Arrow, Transformer } from 'react-konv
 import useGraph from './useGraph';
 import './App.css';
 
+
+const DISTANCE = 4
+const SPILL = 4
+
+
 const metadataItem = (id, keyname, parentId, x=(Math.random() * 800), y=(Math.random() * 800), h=40, w=80) => ({
   id,
   keyname,
@@ -15,12 +20,69 @@ const metadataItem = (id, keyname, parentId, x=(Math.random() * 800), y=(Math.ra
 })
 
 
+const ConnectionHandlerBox = ({node, callback, display}) => {
+  return display ? (
+      <>
+        <Circle
+          x={node.x + node.w + DISTANCE}
+          y={node.y + node.h + DISTANCE}
+          radius={5}
+          fill="rgba(0, 0, 0, .25)"
+          stroke="white"
+          strokeWidth={2}
+          draggable
+          onDragEnd={(e) => callback(e)}
+          onMouseDown={(e) => e.cancelBubble = true}
+        />
+        <Circle
+          x={node.x + node.w + DISTANCE}
+          y={node.y - DISTANCE}
+          radius={5}
+          fill="rgba(0, 0, 0, .25)"
+          stroke="white"
+          strokeWidth={2}
+          draggable
+          onDragEnd={(e) => callback(e)}
+          onMouseDown={(e) => e.cancelBubble = true}
+        />
+        <Circle
+          x={node.x - DISTANCE}
+          y={node.y - DISTANCE}
+          radius={5}
+          fill="rgba(0, 0, 0, .25)"
+          stroke="white"
+          strokeWidth={2}
+          draggable
+          onDragEnd={(e) => callback(e)}
+          onMouseDown={(e) => e.cancelBubble = true}
+        />
+        <Circle
+          x={node.x - DISTANCE}
+          y={node.y + node.h + DISTANCE}
+          radius={5}
+          fill="rgba(0, 0, 0, .25)"
+          stroke="white"
+          strokeWidth={2}
+          draggable
+          onDragEnd={(e) => callback(e)}
+          onMouseDown={(e) => e.cancelBubble = true}
+        />
+      </>
+  ) : null
+}
+
+
+
 const App = ({ itemId = 0}) => {
   const [shapes, setShapes] = useState([]);
   const [selectedShape, setSelectedShape] = useState(null);
   const [connecting, setConnecting] = useState({ from: null, to: null });
   const [currentNode, setCurrentNodeState] = useState(null);
   const [_, setChildren] = useState([]);
+  const [handlesVisibleId, setHandlesVisibleId] = useState(null);
+  const [handlesPosition, setHandlesPosition] = useState({ x: 0, y: 0 });
+  const [connectingShapeId, setConnectingShapeId] = useState(null);
+
   const transformerRef = useRef(null);
 
   const {
@@ -168,6 +230,24 @@ const App = ({ itemId = 0}) => {
     });
   };
 
+  const handleConnectionEnd = (e) => {
+    const target = e.target;
+    const stage = target.getStage();
+    const pointerPosition = stage.getPointerPosition();
+    const shape = stage.getIntersection(pointerPosition);
+  
+    if (shape) {
+      const shapeId = shape.attrs.id;
+      if (shapeId && connectingShapeId !== shapeId) {
+        // Create a connection from connectingShapeId to shapeId
+        addChild(connectingShapeId, shapeId);
+      }
+    }
+  
+    setHandlesVisibleId(shape.attrs.id);
+    setConnectingShapeId(null);
+  };
+  
   useEffect(() => {
     if (itemId === 0) {
       let item1 = metadataItem(0, 'root', null);
@@ -204,6 +284,26 @@ const App = ({ itemId = 0}) => {
     elements.push(
       <React.Fragment key={node.id}>
         <Rect
+          x={x - DISTANCE - SPILL}
+          y={y - DISTANCE - SPILL}
+          width={w + (2 * DISTANCE) + (2 * SPILL)}
+          height={h + (2 * DISTANCE) + (2 * SPILL)}
+          stroke="rgba(255,0,0,.5)"
+          strokeWidth={2}
+          onMouseEnter={(e) => {
+            setHandlesVisibleId(node.id);
+            setHandlesPosition({ x: e.target.x(), y: e.target.y() });
+          }}
+          onMouseLeave={() => {
+            setHandlesVisibleId(null);
+            setConnectingShapeId(null);
+          }}
+          onMouseDown={() => {
+            setConnectingShapeId(node.id);
+          }}
+          pointerEvents="none"
+        ></Rect>
+        <Rect
           x={x}
           y={y}
           width={w}
@@ -216,7 +316,7 @@ const App = ({ itemId = 0}) => {
           onDblClick={() => handleSelect(node.id)}
           onDragEnd={e => {/** USE THIS FOR UPDATING */}}
           onDragMove={(e) => handleDragEnd(node.id, e)}
-          // onClick={() => setSelectedShape(node.id)}
+          listening={true}
           ref={(nodeRef) => {
             if (selectedShape === node.id && nodeRef) {
               transformerRef.current.nodes([nodeRef]);
@@ -237,6 +337,24 @@ const App = ({ itemId = 0}) => {
           offsetX={w / 4}
           offsetY={h / 4}
         />
+
+        <ConnectionHandlerBox
+          node={node}
+          callback={handleConnectionEnd}
+          display={handlesVisibleId === node.id}
+        />
+
+        {selectedShape && (
+          <Transformer
+            ref={transformerRef}
+            boundBoxFunc={(oldBox, newBox) => {
+              if (newBox.width < 5 || newBox.height < 5) {
+                return oldBox;
+              }
+              return newBox;
+            }}
+          />
+        )}
       </React.Fragment>
     );
 
