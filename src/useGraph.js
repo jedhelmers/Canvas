@@ -16,22 +16,21 @@ const useGraph = () => {
 
             const {
                 keyname,
-                units,
-                value,
-                link,
-                annotation,
-                type,
+                children: [],
+                x,
+                y,
+                h,
+                w,
                 ...rest
             } = node
 
             return {
-                keyName: keyname,
-                units,
-                link: {
-                    value,
-                    type,
-                },
-                annotation,
+                keyname,
+                children: [],
+                x,
+                y,
+                h,
+                w,
                 // ...rest,
                 children: node.children.map(buildTree)
             };
@@ -71,7 +70,16 @@ const useGraph = () => {
             const existingNode = newNodes.get(id);
 
             if (existingNode) {
-                const updatedNode = { ...existingNode, ...updates };
+                // Check if updates include x and y coordinates
+                const { x, y, ...restUpdates } = updates;
+                const updatedNode = { ...existingNode, ...restUpdates };
+                
+                // Update x and y if provided
+                if (x !== undefined && y !== undefined) {
+                    updatedNode.x = x;
+                    updatedNode.y = y;
+                }
+
                 newNodes.set(id, updatedNode);
             }
 

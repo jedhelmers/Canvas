@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Stage, Layer, Rect, Circle, Arrow, Transformer } from 'react-konva';
+import { Text, Stage, Layer, Rect, Circle, Arrow, Transformer } from 'react-konva';
 import useGraph from './useGraph';
 import './App.css';
 
-const metadataItem = (id, keyname, parentId) => ({
+const metadataItem = (id, keyname, parentId, x=(Math.random() * 800), y=(Math.random() * 800), h=40, w=80) => ({
   id,
   keyname,
   parentId,
-  value: "",
-  type: "",
-  units: "",
   children: [],
-  annotation: ''
+  x,
+  y,
+  h,
+  w
 })
 
 
@@ -75,17 +75,25 @@ const App = ({ itemId = 0}) => {
   };
 
   // Function to handle shape dragging
+  // Inside handleDragEnd function
   const handleDragEnd = (id, e) => {
-    const newShapes = shapes.map((shape) => {
-      if (shape.id === id) {
-        const updatedShape = { ...shape, x: e.target.x(), y: e.target.y() };
-        updateNode(id, updatedShape);
-        return updatedShape;
-      }
-      return shape;
-    });
-    setShapes(newShapes);
-  };
+    const node = getNode(id)
+
+    // const newShapes = shapes.map((shape) => {
+    //     if (shape.id === id) {
+    //         const updatedShape = { ...shape, x: e.target.x(), y: e.target.y() };
+    //         // Update node position in the graph
+    //         updateNode(id, { x: updatedShape.x, y: updatedShape.y });
+    //         return updatedShape;
+    //     }
+    //     return shape;
+    // });
+  const updatedShape = { ...node, x: e.target.x(), y: e.target.y() };
+  // Update node position in the graph
+  updateNode(id, { x: updatedShape.x, y: updatedShape.y });
+  setShapes(updatedShape);
+};
+
 
   // Function to handle shape transformation
   const handleTransformEnd = (id, e) => {
@@ -145,7 +153,7 @@ const App = ({ itemId = 0}) => {
       addNode(item1);
       addChild(null, 1);
       
-      for (let i = 1; i < 100; i++) {
+      for (let i = 1; i < 5; i++) {
         const parentId = Math.floor(i * Math.random())
         let temp = metadataItem(i, `key${i}`, parentId)
         addNode(temp);
@@ -158,8 +166,80 @@ const App = ({ itemId = 0}) => {
     const _itemId = itemId === 0 ? 0 : itemId
     setCurrentNodeState(getNode(_itemId));
     setChildren(getChildNodes(_itemId));
-    console.log(reconstructNestedJSON(0))
-  }, [itemId, getNode, getChildNodes, currentNode]);
+    // console.log(JSON.stringify(reconstructNestedJSON(0), null, 3))
+  }, [itemId, getNode, updateNode, getChildNodes, currentNode]);
+
+  const drawNodes = (node, parent = null) => {
+    // console.log('node', node)
+    if (!node) return
+
+    const elements = [];
+    const x = node?.x || 0;
+    const y = node?.y || 0;
+    const w = node?.w || 80;
+    const h = node?.h || 40;
+
+    // Create rectangle for the node
+    elements.push(
+      <React.Fragment key={node.id}>
+        <Rect
+          x={x}
+          y={y}
+          width={w}
+          height={h}
+          fill="rgba(255,0,0,.5)"
+          stroke="rgba(255,0,0,.5)"
+          strokeWidth={2}
+          draggable
+          onDragMove={(e) => handleDragEnd(node.id, e)}
+          onClick={() => setSelectedShape(node.id)}
+          ref={(node) => {
+            if (selectedShape === node?.attrs?.id) {
+              transformerRef.current.nodes([node]);
+              transformerRef.current.getLayer().batchDraw();
+            }
+          }}
+        />
+        <Text
+          x={x + w / 2}
+          y={y + h / 2}
+          text={node?.keyname}
+          fontSize={14}
+          fontFamily="Arial"
+          fill="black"
+          align="center"
+          verticalAlign="middle"
+          offsetX={w / 4}
+          offsetY={h / 4}
+        />
+      </React.Fragment>
+    );
+
+    // Draw connection to the parent
+    if (parent) {
+      elements.push(
+        <Arrow
+          points={[
+            parent.x + parent.w / 2,
+            parent.y + parent.h / 2,
+            x + w / 2,
+            y + h / 2
+          ]}
+          stroke="black"
+          fill="black"
+        />
+      );
+    }
+
+    // Recursively draw child nodes
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => {
+        elements.push(...drawNodes(child, node));
+      });
+    }
+
+    return elements;
+  };
 
   return (
     <div>
@@ -169,42 +249,7 @@ const App = ({ itemId = 0}) => {
       </div>
       <Stage width={window.innerWidth} height={window.innerHeight}>
         <Layer>
-          {shapes.map((shape) => (
-            <React.Fragment key={shape.id}>
-              {shape.type === 'rect' && (
-                <Rect
-                  {...shape}
-                  draggable
-                  onClick={() => handleSelect(shape.id)}
-                  onDragEnd={(e) => handleDragEnd(shape.id, e)}
-                  onTransformEnd={(e) => handleTransformEnd(shape.id, e)}
-                  ref={(node) => {
-                    if (selectedShape === shape.id) {
-                      transformerRef.current.nodes([node]);
-                      transformerRef.current.getLayer().batchDraw();
-                    }
-                  }}
-                />
-              )}
-              {shape.type === 'circle' && (
-                <Circle
-                  {...shape}
-                  draggable
-                  onClick={() => handleSelect(shape.id)}
-                  onDragEnd={(e) => handleDragEnd(shape.id, e)}
-                  onTransformEnd={(e) => handleTransformEnd(shape.id, e)}
-                  ref={(node) => {
-                    if (selectedShape === shape.id) {
-                      transformerRef.current.nodes([node]);
-                      transformerRef.current.getLayer().batchDraw();
-                    }
-                  }}
-                />
-              )}
-            </React.Fragment>
-          ))}
-          {/* Draw connections based on tree structure */}
-          {shapes.map((shape) => drawConnections(shape.id))}
+          {drawNodes(reconstructNestedJSON(0))}
           <Transformer ref={transformerRef} />
         </Layer>
       </Stage>
