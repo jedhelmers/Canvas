@@ -65,6 +65,7 @@ const App = ({ itemId = 0}) => {
   const handleSelect = (id) => {
     setSelectedShape(id);
     setCurrentNode(id);
+    console.log(id)
     if (connecting.from === null) {
       setConnecting({ from: id, to: null });
     } else if (connecting.to === null && connecting.from !== id) {
@@ -77,43 +78,63 @@ const App = ({ itemId = 0}) => {
   // Function to handle shape dragging
   // Inside handleDragEnd function
   const handleDragEnd = (id, e) => {
-    const node = getNode(id)
+    const node = getNode(id); // Directly get the node
+    if (!node) return;
 
-    // const newShapes = shapes.map((shape) => {
-    //     if (shape.id === id) {
-    //         const updatedShape = { ...shape, x: e.target.x(), y: e.target.y() };
-    //         // Update node position in the graph
-    //         updateNode(id, { x: updatedShape.x, y: updatedShape.y });
-    //         return updatedShape;
-    //     }
-    //     return shape;
-    // });
-  const updatedShape = { ...node, x: e.target.x(), y: e.target.y() };
-  // Update node position in the graph
-  updateNode(id, { x: updatedShape.x, y: updatedShape.y });
-  setShapes(updatedShape);
-};
+    const updatedShape = { ...node, x: e.target.x(), y: e.target.y() };
+
+    // Update node position in the graph
+    updateNode(id, { x: updatedShape.x, y: updatedShape.y });
+
+    // Update shapes with the new position (if necessary)
+    setShapes(prevShapes => {
+      const shapeIndex = prevShapes.findIndex(shape => shape.id === id);
+      if (shapeIndex !== -1) {
+        const newShapes = [...prevShapes];
+        newShapes[shapeIndex] = updatedShape;
+        return newShapes;
+      }
+      return prevShapes;
+    });
+  };
 
 
   // Function to handle shape transformation
   const handleTransformEnd = (id, e) => {
-    const node = e.target;
-    const newShapes = shapes.map((shape) => {
-      if (shape.id === id) {
-        if (shape.type === 'circle') {
-          const updatedShape = { ...shape, x: node.x(), y: node.y(), radius: node.radius() };
-          updateNode(id, updatedShape);
-          return updatedShape;
-        } else if (shape.type === 'rect') {
-          const updatedShape = { ...shape, x: node.x(), y: node.y(), width: node.width(), height: node.height() };
-          updateNode(id, updatedShape);
-          return updatedShape;
-        }
+    console.log(id, e)
+    const node = getNode(id); // Directly get the node
+    if (!node) return;
+  
+    const scaleX = e.target.scaleX();
+    const scaleY = e.target.scaleY();
+  
+    // Update the node's dimensions and position
+    const updatedNode = {
+      x: e.target.x(),
+      y: e.target.y(),
+      w: Math.max(5, e.target.width() * scaleX),  // Ensure minimum width
+      h: Math.max(5, e.target.height() * scaleY)  // Ensure minimum height
+    };
+  
+    // Reset scale to avoid cumulative scaling issues
+    e.target.scaleX(1);
+    e.target.scaleY(1);
+  
+    // Update node dimensions in the graph
+    updateNode(id, updatedNode);
+  
+    // Update shapes with the new dimensions (if necessary)
+    setShapes(prevShapes => {
+      const shapeIndex = prevShapes.findIndex(shape => shape.id === id);
+      if (shapeIndex !== -1) {
+        const newShapes = [...prevShapes];
+        newShapes[shapeIndex] = { ...node, ...updatedNode };
+        return newShapes;
       }
-      return shape;
+      return prevShapes;
     });
-    setShapes(newShapes);
   };
+  
 
   // Function to add a parent-child connection
   const addConnection = (fromId, toId) => {
@@ -191,14 +212,18 @@ const App = ({ itemId = 0}) => {
           stroke="rgba(255,0,0,.5)"
           strokeWidth={2}
           draggable
+          // sceneFunc={console.log}
+          onDblClick={() => handleSelect(node.id)}
+          onDragEnd={e => {/** USE THIS FOR UPDATING */}}
           onDragMove={(e) => handleDragEnd(node.id, e)}
-          onClick={() => setSelectedShape(node.id)}
-          ref={(node) => {
-            if (selectedShape === node?.attrs?.id) {
-              transformerRef.current.nodes([node]);
+          // onClick={() => setSelectedShape(node.id)}
+          ref={(nodeRef) => {
+            if (selectedShape === node.id && nodeRef) {
+              transformerRef.current.nodes([nodeRef]);
               transformerRef.current.getLayer().batchDraw();
             }
           }}
+          onTransformEnd={(e) => handleTransformEnd(node.id, e)}
         />
         <Text
           x={x + w / 2}
@@ -249,8 +274,10 @@ const App = ({ itemId = 0}) => {
       </div>
       <Stage width={window.innerWidth} height={window.innerHeight}>
         <Layer>
+          <Transformer
+            ref={transformerRef}
+          />
           {drawNodes(reconstructNestedJSON(0))}
-          <Transformer ref={transformerRef} />
         </Layer>
       </Stage>
     </div>
