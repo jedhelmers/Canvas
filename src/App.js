@@ -140,6 +140,7 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
 
 const App = ({ itemId = 0}) => {
   const [shapes, setShapes] = useState([]);
+  const [graph, setGraph] = useState({})
   const [selectedShape, setSelectedShape] = useState(null);
   const [connecting, setConnecting] = useState({ from: null, to: null });
   const [currentNode, setCurrentNodeState] = useState(null);
@@ -150,6 +151,7 @@ const App = ({ itemId = 0}) => {
   const [toFrom, setToFrom] = useState([null, null])
 
   const transformerRef = useRef(null);
+  const layerRef = useRef(null)
 
   const {
     nodes,
@@ -183,7 +185,12 @@ const App = ({ itemId = 0}) => {
     };
 
     // Add shape to the state
-    setShapes((prevShapes) => [...prevShapes, newShape]);
+    setShapes((prevShapes) => [
+      ...prevShapes.map(shape => {
+        console.log('shape', shape)
+        return shape
+      }),
+      newShape]);
 
     // Add shape to the graph
     addNode(newShape);
@@ -287,7 +294,16 @@ const App = ({ itemId = 0}) => {
 
       return (
         <React.Fragment key={`${parentId}-${child.id}`}>
-          <Arrow points={[parentX, parentY, childX, childY]} stroke="black" fill="black" />
+          <Arrow
+            points={[
+              parentX,
+              parentY,
+              childX,
+              childY
+            ]}
+            stroke="black"
+            fill="black"
+          />
           {drawConnections(child.id)}
         </React.Fragment>
       );
@@ -333,7 +349,14 @@ const App = ({ itemId = 0}) => {
   useEffect(() => {
     console.log(toFrom)
     if (toFrom[0] && toFrom[1]) {
-      addConnection(...toFrom)
+      const parentNode = getNode(toFrom[0])
+      const childNode = getNode(toFrom[1])
+
+      childNode.parentId = parentNode.id
+      updateNode(childNode.id, childNode)
+
+      parentNode.children.push(childNode.id)
+      updateNode(parentNode.id, parentNode)
     }
   }, [toFrom])
 
@@ -356,11 +379,16 @@ const App = ({ itemId = 0}) => {
     const _itemId = itemId === 0 ? 0 : itemId
     setCurrentNodeState(getNode(_itemId));
     setChildren(getChildNodes(_itemId));
-    // console.log(JSON.stringify(reconstructNestedJSON(0), null, 3))
-  }, [itemId, getNode, updateNode, getChildNodes, currentNode]);
+    setGraph(reconstructNestedJSON(0))
+  }, [itemId, getNode, getChildNodes, currentNode]);
 
   const drawNodes = (node, parent = null) => {
     // console.log('node', node)
+    // Assuming `layer` is your Konva layer
+    const layer = layerRef.current
+    const shapeIds = layer?.children.map(child => child);
+    // console.log(shapeIds);
+
     if (!node) return
 
     const elements = [];
@@ -373,6 +401,7 @@ const App = ({ itemId = 0}) => {
     elements.push(
       <React.Fragment key={node.id}>
         <Rect
+          id={node.id}
           x={x - DISTANCE - SPILL}
           y={y - DISTANCE - SPILL}
           width={w + (2 * DISTANCE) + (2 * SPILL)}
@@ -489,6 +518,7 @@ const App = ({ itemId = 0}) => {
     // Recursively draw child nodes
     if (node.children && node.children.length > 0) {
       node.children.forEach(child => {
+        // console.log('child', child)
         elements.push(...drawNodes(child, node));
       });
     }
@@ -503,11 +533,11 @@ const App = ({ itemId = 0}) => {
         <button onClick={() => addShape('circle')}>Add Circle</button>
       </div>
       <Stage width={window.innerWidth} height={window.innerHeight}>
-        <Layer>
+        <Layer ref={layerRef}>
           <Transformer
             ref={transformerRef}
           />
-          {drawNodes(reconstructNestedJSON(0))}
+          {drawNodes(graph)}
         </Layer>
       </Stage>
     </div>

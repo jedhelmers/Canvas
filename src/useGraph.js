@@ -15,6 +15,7 @@ const useGraph = () => {
             }
 
             const {
+                id,
                 keyname,
                 children: [],
                 x,
@@ -25,6 +26,7 @@ const useGraph = () => {
             } = node
 
             return {
+                id,
                 keyname,
                 children: [],
                 x,
@@ -73,7 +75,7 @@ const useGraph = () => {
                 // Check if updates include x and y coordinates
                 const { x, y, ...restUpdates } = updates;
                 const updatedNode = { ...existingNode, ...restUpdates };
-                
+
                 // Update x and y if provided
                 if (x !== undefined && y !== undefined) {
                     updatedNode.x = x;
@@ -168,7 +170,7 @@ const useGraph = () => {
 
             return {
                 ...node,
-                children: node.children.map(childId => buildTree(nodes.get(childId)))
+                children: node?.children.map(childId => buildTree(nodes.get(childId))) || []
             };
         };
 
