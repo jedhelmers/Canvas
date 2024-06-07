@@ -4,7 +4,7 @@ import useGraph from './useGraph';
 import './App.css';
 
 
-const DISTANCE = 4
+const DISTANCE = 8
 const SPILL = 4
 
 
@@ -20,9 +20,10 @@ const metadataItem = (id, keyname, parentId, x=(Math.random() * 800), y=(Math.ra
 })
 
 
-const ConnectionHandlerBox = ({node, callback, display}) => {
+const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLeave}) => {
   return display ? (
       <>
+      {/* Corners */}
         <Circle
           x={node.x + node.w + DISTANCE}
           y={node.y + node.h + DISTANCE}
@@ -31,8 +32,11 @@ const ConnectionHandlerBox = ({node, callback, display}) => {
           stroke="white"
           strokeWidth={2}
           draggable
+          listening={true}
           onDragEnd={(e) => callback(e)}
           onMouseDown={(e) => e.cancelBubble = true}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
         />
         <Circle
           x={node.x + node.w + DISTANCE}
@@ -44,6 +48,8 @@ const ConnectionHandlerBox = ({node, callback, display}) => {
           draggable
           onDragEnd={(e) => callback(e)}
           onMouseDown={(e) => e.cancelBubble = true}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
         />
         <Circle
           x={node.x - DISTANCE}
@@ -55,6 +61,8 @@ const ConnectionHandlerBox = ({node, callback, display}) => {
           draggable
           onDragEnd={(e) => callback(e)}
           onMouseDown={(e) => e.cancelBubble = true}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
         />
         <Circle
           x={node.x - DISTANCE}
@@ -66,11 +74,68 @@ const ConnectionHandlerBox = ({node, callback, display}) => {
           draggable
           onDragEnd={(e) => callback(e)}
           onMouseDown={(e) => e.cancelBubble = true}
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={onMouseEnter}
+        />
+
+        {/* Top + Bottom */}
+        <Circle
+          x={node.x + (node.w/2)}
+          y={node.y + node.h + DISTANCE}
+          radius={5}
+          fill="rgba(0, 0, 0, .25)"
+          stroke="white"
+          strokeWidth={2}
+          draggable
+          onDragEnd={(e) => callback(e)}
+          onMouseDown={(e) => e.cancelBubble = true}
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={onMouseEnter}
+        />
+        <Circle
+          x={node.x + (node.w/2)}
+          y={node.y - DISTANCE}
+          radius={5}
+          fill="rgba(0, 0, 0, .25)"
+          stroke="white"
+          strokeWidth={2}
+          draggable
+          onDragEnd={(e) => callback(e)}
+          onMouseDown={(e) => e.cancelBubble = true}
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={onMouseEnter}
+        />
+
+        {/* Sides */}
+        <Circle
+          x={node.x - DISTANCE}
+          y={node.y + (node.h/2)}
+          radius={5}
+          fill="rgba(0, 0, 0, .25)"
+          stroke="white"
+          strokeWidth={2}
+          draggable
+          onDragEnd={(e) => callback(e)}
+          onMouseDown={(e) => e.cancelBubble = true}
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={onMouseEnter}
+        />
+        <Circle
+          x={node.x + (node.w) + DISTANCE}
+          y={node.y + (node.h/2)}
+          radius={5}
+          fill="rgba(0, 0, 0, .25)"
+          stroke="white"
+          strokeWidth={2}
+          draggable
+          onDragEnd={(e) => callback(e)}
+          onMouseDown={(e) => e.cancelBubble = true}
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={onMouseEnter}
         />
       </>
   ) : null
 }
-
 
 
 const App = ({ itemId = 0}) => {
@@ -166,10 +231,10 @@ const App = ({ itemId = 0}) => {
     console.log(id, e)
     const node = getNode(id); // Directly get the node
     if (!node) return;
-  
+
     const scaleX = e.target.scaleX();
     const scaleY = e.target.scaleY();
-  
+
     // Update the node's dimensions and position
     const updatedNode = {
       x: e.target.x(),
@@ -177,14 +242,14 @@ const App = ({ itemId = 0}) => {
       w: Math.max(5, e.target.width() * scaleX),  // Ensure minimum width
       h: Math.max(5, e.target.height() * scaleY)  // Ensure minimum height
     };
-  
+
     // Reset scale to avoid cumulative scaling issues
     e.target.scaleX(1);
     e.target.scaleY(1);
-  
+
     // Update node dimensions in the graph
     updateNode(id, updatedNode);
-  
+
     // Update shapes with the new dimensions (if necessary)
     setShapes(prevShapes => {
       const shapeIndex = prevShapes.findIndex(shape => shape.id === id);
@@ -196,7 +261,7 @@ const App = ({ itemId = 0}) => {
       return prevShapes;
     });
   };
-  
+
 
   // Function to add a parent-child connection
   const addConnection = (fromId, toId) => {
@@ -235,7 +300,7 @@ const App = ({ itemId = 0}) => {
     const stage = target.getStage();
     const pointerPosition = stage.getPointerPosition();
     const shape = stage.getIntersection(pointerPosition);
-  
+
     if (shape) {
       const shapeId = shape.attrs.id;
       if (shapeId && connectingShapeId !== shapeId) {
@@ -243,17 +308,17 @@ const App = ({ itemId = 0}) => {
         addChild(connectingShapeId, shapeId);
       }
     }
-  
+
     setHandlesVisibleId(shape.attrs.id);
     setConnectingShapeId(null);
   };
-  
+
   useEffect(() => {
     if (itemId === 0) {
       let item1 = metadataItem(0, 'root', null);
       addNode(item1);
       addChild(null, 1);
-      
+
       for (let i = 1; i < 5; i++) {
         const parentId = Math.floor(i * Math.random())
         let temp = metadataItem(i, `key${i}`, parentId)
@@ -288,7 +353,7 @@ const App = ({ itemId = 0}) => {
           y={y - DISTANCE - SPILL}
           width={w + (2 * DISTANCE) + (2 * SPILL)}
           height={h + (2 * DISTANCE) + (2 * SPILL)}
-          stroke="rgba(255,0,0,.5)"
+          stroke="rgba(255,0,0,.05)"
           strokeWidth={2}
           onMouseEnter={(e) => {
             setHandlesVisibleId(node.id);
@@ -323,6 +388,17 @@ const App = ({ itemId = 0}) => {
               transformerRef.current.getLayer().batchDraw();
             }
           }}
+          onMouseEnter={(e) => {
+            setHandlesVisibleId(node.id);
+            setHandlesPosition({ x: e.target.x(), y: e.target.y() });
+          }}
+          onMouseLeave={() => {
+            setHandlesVisibleId(null);
+            setConnectingShapeId(null);
+          }}
+          onMouseDown={() => {
+            setConnectingShapeId(node.id);
+          }}
           onTransformEnd={(e) => handleTransformEnd(node.id, e)}
         />
         <Text
@@ -342,6 +418,17 @@ const App = ({ itemId = 0}) => {
           node={node}
           callback={handleConnectionEnd}
           display={handlesVisibleId === node.id}
+          onMouseEnter={(e) => {
+            setHandlesVisibleId(node.id);
+            setHandlesPosition({ x: e.target.x(), y: e.target.y() });
+          }}
+          onMouseLeave={() => {
+            setHandlesVisibleId(null);
+            setConnectingShapeId(null);
+          }}
+          onMouseDown={() => {
+            setConnectingShapeId(node.id);
+          }}
         />
 
         {selectedShape && (
