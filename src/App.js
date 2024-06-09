@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Text, Stage, Layer, Rect, Circle, Arrow, Transformer } from 'react-konva';
+import { Text, Stage, Layer, Rect, Circle, Arrow, Line, Transformer } from 'react-konva';
 import useGraph from './useGraph';
 import './App.css';
 
@@ -33,7 +33,7 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           strokeWidth={2}
           listening={true}
           onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id)}
+          onClick={(e) => setToFromLocs(node.id, 4)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
@@ -46,7 +46,7 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           stroke="white"
           strokeWidth={2}
           onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id)}
+          onClick={(e) => setToFromLocs(node.id, 2)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
@@ -59,7 +59,7 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           stroke="white"
           strokeWidth={2}
           onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id)}
+          onClick={(e) => setToFromLocs(node.id, 0)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
@@ -72,7 +72,7 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           stroke="white"
           strokeWidth={2}
           onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id)}
+          onClick={(e) => setToFromLocs(node.id, 7)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseLeave={onMouseLeave}
           onMouseEnter={onMouseEnter}
@@ -88,6 +88,7 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           strokeWidth={2}
           draggable
           onDragEnd={(e) => callback(e)}
+          onClick={(e) => setToFromLocs(node.id, 5)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseLeave={onMouseLeave}
           onMouseEnter={onMouseEnter}
@@ -101,6 +102,7 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           strokeWidth={2}
           draggable
           onDragEnd={(e) => callback(e)}
+          onClick={(e) => setToFromLocs(node.id, 1)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseLeave={onMouseLeave}
           onMouseEnter={onMouseEnter}
@@ -116,6 +118,7 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           strokeWidth={2}
           draggable
           onDragEnd={(e) => callback(e)}
+          onClick={(e) => setToFromLocs(node.id, 8)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseLeave={onMouseLeave}
           onMouseEnter={onMouseEnter}
@@ -129,6 +132,7 @@ const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLea
           strokeWidth={2}
           draggable
           onDragEnd={(e) => callback(e)}
+          onClick={(e) => setToFromLocs(node.id, 3)}
           onMouseDown={(e) => e.cancelBubble = true}
           onMouseLeave={onMouseLeave}
           onMouseEnter={onMouseEnter}
@@ -195,6 +199,60 @@ const App = ({ itemId = 0}) => {
     // Add shape to the graph
     addNode(newShape);
   };
+
+  const getConnectorHandleLoc = (id, pos) => {
+    const node = getNode(id)
+
+    switch (String(pos)) {
+      case '0':
+        return [
+          node.x - DISTANCE,
+          node.y - DISTANCE
+        ]
+      case '1':
+        return [
+          node.x + (node.w/2),
+          node.y - DISTANCE
+        ]
+      case '2':
+        return [
+          node.x + node.w + DISTANCE,
+          node.y - DISTANCE
+        ]
+      case '3':
+        return [
+          node.x + (node.w) + DISTANCE,
+          node.y + (node.h/2)
+        ]
+      case '4':
+        return [
+          node.x + node.w + DISTANCE,
+          node.y + node.h + DISTANCE,
+        ]
+      case '5':
+        return [
+          node.x + (node.w/2),
+          node.y + node.h + DISTANCE
+        ]
+      case '6':
+        return [
+          node.x,
+          node.y
+        ]
+      case '7':
+        return [
+          node.x - DISTANCE,
+          node.y + node.h + DISTANCE
+        ]
+      case '8':
+        return [
+          node.x - DISTANCE,
+          node.y + (node.h/2)
+        ]
+      default:
+        return [0,0]
+    }
+  }
 
   // Function to handle shape selection
   const handleSelect = (id) => {
@@ -271,7 +329,7 @@ const App = ({ itemId = 0}) => {
 
   // Function to add a parent-child connection
   const addConnection = (fromId, toId) => {
-    addChild(fromId, toId);
+    addChild(fromId, toId, 4);
   };
 
   // Function to draw connections
@@ -320,7 +378,7 @@ const App = ({ itemId = 0}) => {
       const shapeId = shape.attrs.id;
       if (shapeId && connectingShapeId !== shapeId) {
         // Create a connection from connectingShapeId to shapeId
-        addChild(connectingShapeId, shapeId);
+        addChild(connectingShapeId, shapeId, 4);
       }
     }
 
@@ -328,7 +386,9 @@ const App = ({ itemId = 0}) => {
     setConnectingShapeId(null);
   };
 
-  const setToFromLocs = (id) => {
+  const setToFromLocs = (id, pos) => {
+    // console.log(getConnectorHandleLoc(id, pos))
+
     if (id && !toFrom.includes(id)) {
       if (!toFrom[0]) {
         setToFrom([
@@ -344,6 +404,26 @@ const App = ({ itemId = 0}) => {
         setToFrom([null, null])
       }
     }
+  }
+
+  const createAdvancedOrthogonalPath = (startPoint, endPoint, middlePoint = null) => {
+    const path = [startPoint];
+
+    if (middlePoint) {
+        // Move horizontally to the middle point's x, then vertically to the middle point's y
+        path.push([middlePoint[0], startPoint[1]]);
+        path.push(middlePoint);
+        // Move vertically to the end point's y, keeping middle point's x
+        path.push([middlePoint[0], endPoint[1]]);
+    } else {
+        // Move horizontally to the same x coordinate as the end point
+        path.push([endPoint[0], startPoint[1]]);
+    }
+
+    // Finally, move to the end point
+    path.push(endPoint);
+
+    return path;
   }
 
   useEffect(() => {
@@ -364,13 +444,13 @@ const App = ({ itemId = 0}) => {
     if (itemId === 0) {
       let item1 = metadataItem(0, 'root', null);
       addNode(item1);
-      addChild(null, 1);
+      addChild(null, 1, 4);
 
       for (let i = 1; i < 5; i++) {
         const parentId = Math.floor(i * Math.random())
         let temp = metadataItem(i, `key${i}`, parentId)
         addNode(temp);
-        addChild(parentId, i);
+        addChild(parentId, i, 4);
       }
     }
   }, []);
@@ -501,84 +581,23 @@ const App = ({ itemId = 0}) => {
 
     const parent = getNode(node.parentId)
 
-    const getConnectorHandleLoc = (from) => {
-      if (!from.includes('.')) {
-        return [0,0]
-      }
-
-      const fromTokens = from.split('.')
-      const fromId = fromTokens[0]
-      const fromPoint = fromTokens[1]
-      const node = getNode(fromId)
-      const output = []
-      switch (fromPoint) {
-        case 0:
-          output = [
-            node.x - DISTANCE,
-            node.y - DISTANCE
-          ]
-          break
-        case 1:
-          output = [
-            node.x + (node.w/2),
-            node.y - DISTANCE
-          ]
-          break
-        case 2:
-          output = [
-            node.x + node.w + DISTANCE,
-            node.y - DISTANCE
-          ]
-          break
-        case 3:
-          output = [
-            node.x + (node.w) + DISTANCE,
-            node.y + (node.h/2)
-          ]
-          break
-        case 4:
-          output = [
-            node.x + node.w + DISTANCE,
-            node.y + node.h + DISTANCE,
-          ]
-          break
-        case 5:
-          output = [
-            node.x + (node.w/2),
-            node.y + node.h + DISTANCE
-          ]
-          break
-        case 6:
-          output = [
-            node.x,
-            node.y
-          ]
-          break
-        case 7:
-          output = [
-            node.x - DISTANCE,
-            node.y + node.h + DISTANCE
-          ]
-          break
-        case 8:
-          output = [
-            node.x - DISTANCE,
-            node.y + (node.h/2)
-          ]
-          break
-      }
-    }
-
     // Draw connection to the parent
     if (parent) {
+      const [parentX, parentY] = getConnectorHandleLoc(parent.id, 5)
+      const [nodeX, nodeY] = getConnectorHandleLoc(node.id, 3)
+
+      // console.log(createAdvancedOrthogonalPath([parentX, parentY], [nodeX, nodeY]))
       elements.push(
-        <Arrow
-          points={[
-            parent.x + parent.w / 2,
-            parent.y + parent.h / 2,
-            x + w / 2,
-            y + h / 2
-          ]}
+        <Line
+          // points={[
+          //   parentX,
+          //   parentY,
+          //   nodeX,
+          //   nodeY
+          // ]}
+          points={
+            createAdvancedOrthogonalPath([parentX, parentY], [nodeX, nodeY]).flat()
+          }
           stroke="black"
           fill="black"
         />
