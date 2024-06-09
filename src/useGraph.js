@@ -7,8 +7,9 @@ const useGraph = () => {
     const [currentChildren, setCurrentChildren] = useState([]);
 
     const exportNode = () => {
+        // console.log('exportNode')
         const buildTree = (nodeId) => {
-            const node = nodes.get(nodeId);
+            const node = nodes.get(`${nodeId}`);
 
             if (!node) {
                 return null;
@@ -51,25 +52,30 @@ const useGraph = () => {
     };
 
     const addNode = useCallback((metadataItem) => {
-        setNodes(prev => new Map(prev).set(metadataItem.id, { parentId: null, ...metadataItem, children: [] }));
+        // console.log('addNode')
+        setNodes(prev => new Map(prev).set(`${metadataItem.id}`, { parentId: null, ...metadataItem, children: [] }));
     }, []);
 
     const setCurrentNode = useCallback((id) => {
+        // console.log('setCurrentNode')
         setCurrentNodeId(id);
     }, []);
 
     const getCurrentNode = useCallback(() => {
+        // console.log('getCurrentNode')
         return getNode(currentNodeId);
     }, [currentNodeId, nodes]);
 
     const getNode = useCallback((id) => {
-        return nodes.get(id);
+        // console.log('getNode')
+        return nodes.get(`${id}`);
     }, [nodes]);
 
     const updateNode = useCallback((id, updates) => {
+        // console.log('updateNode')
         setNodes(prev => {
             const newNodes = new Map(prev);
-            const existingNode = newNodes.get(id);
+            const existingNode = newNodes.get(`${id}`);
 
             if (existingNode) {
                 // Check if updates include x and y coordinates
@@ -82,7 +88,7 @@ const useGraph = () => {
                     updatedNode.y = y;
                 }
 
-                newNodes.set(id, updatedNode);
+                newNodes.set(`${id}`, updatedNode);
             }
 
             return newNodes;
@@ -90,15 +96,16 @@ const useGraph = () => {
     }, []);
 
     const addChild = useCallback((parentId, childId) => {
+        // console.log('addChild')
         setNodes(prev => {
             const newNodes = new Map(prev);
-            const parentNode = newNodes.get(parentId);
-            const childNode = newNodes.get(childId);
+            const parentNode = newNodes.get(`${parentId}`);
+            const childNode = newNodes.get(`${childId}`);
 
             if (parentNode && childNode) {
-                if (!parentNode.children.includes(childId)) {
-                    parentNode.children.push(childId);
-                    newNodes.set(childId, { ...childNode, parentId });
+                if (!parentNode.children.includes(`${childId}`)) {
+                    parentNode.children.push(`${childId}`);
+                    newNodes.set(`${childId}`, { ...childNode, parentId: `${parentId}` });
                 }
             }
             return newNodes;
@@ -106,29 +113,32 @@ const useGraph = () => {
     }, []);
 
     const getParentIds = useCallback((nodeId) => {
+        // console.log('getParentIds')
         const parentIds = [];
-        let currentNode = nodes.get(nodeId);
+        let currentNode = nodes.get(`${nodeId}`);
 
         while (currentNode && currentNode.parentId !== null) {
             parentIds.push(currentNode.parentId);
-            currentNode = nodes.get(currentNode.parentId);
+            currentNode = nodes.get(`${currentNode.parentId}`);
         }
 
         return parentIds;
     }, [nodes]);
 
     const getParentKeyNames = useCallback((nodeId) => {
+        // console.log('getParentKeyNames')
         const parentNodes = [];
         const parentsIds = getParentIds(nodeId)
 
         for (const parentId of parentsIds) {
-            parentNodes.push(nodes.get(parentId))
+            parentNodes.push(nodes.get(`${parentId}`))
         }
 
         return parentNodes;
     }, [nodes]);
 
     const removeNode = useCallback((id) => {
+        // console.log('removeNode')
         setNodes(prev => {
             const newNodes = new Map(prev);
 
@@ -147,6 +157,7 @@ const useGraph = () => {
     }, []);
 
     const getChildNodes = useCallback((nodeId) => {
+        // console.log('getChildNodes')
         const node = getNode(nodeId);
 
         if (!node) {
@@ -157,7 +168,8 @@ const useGraph = () => {
     }, [nodes]);
 
     const reconstructNestedJSON = useCallback((rootId) => {
-        const rootNode = nodes.get(0);
+        // console.log('reconstructNestedJSON')
+        const rootNode = nodes.get('0');
 
         if (!rootNode) {
             return null;
@@ -170,7 +182,7 @@ const useGraph = () => {
 
             return {
                 ...node,
-                children: node?.children.map(childId => buildTree(nodes.get(childId))) || []
+                children: node?.children.map(childId => buildTree(nodes.get(`${childId}`))) || []
             };
         };
 

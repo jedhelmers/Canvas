@@ -8,10 +8,10 @@ const DISTANCE = 8
 const SPILL = 4
 
 
-const metadataItem = (id, keyname, parentId, x=(Math.random() * 800), y=(Math.random() * 800), h=40, w=80) => ({
-  id,
+const metadataItem = (id, keyname, parentId, x=(Math.random() * 400), y=(Math.random() * 400), h=40, w=80) => ({
+  id: String(id),
   keyname,
-  parentId,
+  parentId: String(parentId),
   children: [],
   x,
   y,
@@ -200,7 +200,7 @@ const App = ({ itemId = 0}) => {
   const handleSelect = (id) => {
     setSelectedShape(id);
     setCurrentNode(id);
-    console.log(id)
+    // console.log(id)
     if (connecting.from === null) {
       setConnecting({ from: id, to: null });
     } else if (connecting.to === null && connecting.from !== id) {
@@ -347,7 +347,7 @@ const App = ({ itemId = 0}) => {
   }
 
   useEffect(() => {
-    console.log(toFrom)
+    // console.log(toFrom)
     if (toFrom[0] && toFrom[1]) {
       const parentNode = getNode(toFrom[0])
       const childNode = getNode(toFrom[1])
@@ -376,19 +376,17 @@ const App = ({ itemId = 0}) => {
   }, []);
 
   useEffect(() => {
+    console.log(nodes)
+  }, [nodes])
+
+  useEffect(() => {
     const _itemId = itemId === 0 ? 0 : itemId
     setCurrentNodeState(getNode(_itemId));
     setChildren(getChildNodes(_itemId));
     setGraph(reconstructNestedJSON(0))
   }, [itemId, getNode, getChildNodes, currentNode]);
 
-  const drawNodes = (node, parent = null) => {
-    // console.log('node', node)
-    // Assuming `layer` is your Konva layer
-    const layer = layerRef.current
-    const shapeIds = layer?.children.map(child => child);
-    // console.log(shapeIds);
-
+  const drawNodes = (node) => {
     if (!node) return
 
     const elements = [];
@@ -396,108 +394,180 @@ const App = ({ itemId = 0}) => {
     const y = node?.y || 0;
     const w = node?.w || 80;
     const h = node?.h || 40;
-
+  
     // Create rectangle for the node
     elements.push(
       <React.Fragment key={node.id}>
-        <Rect
-          id={node.id}
-          x={x - DISTANCE - SPILL}
-          y={y - DISTANCE - SPILL}
-          width={w + (2 * DISTANCE) + (2 * SPILL)}
-          height={h + (2 * DISTANCE) + (2 * SPILL)}
-          stroke="rgba(255,0,0,.05)"
-          strokeWidth={2}
-          onMouseEnter={(e) => {
-            setHandlesVisibleId(node.id);
-            setHandlesPosition({ x: e.target.x(), y: e.target.y() });
-          }}
-          onMouseLeave={() => {
-            setHandlesVisibleId(null);
-            setConnectingShapeId(null);
-          }}
-          onMouseDown={() => {
-            setConnectingShapeId(node.id);
-          }}
-          pointerEvents="none"
-        ></Rect>
-        <Rect
-          x={x}
-          y={y}
-          width={w}
-          height={h}
-          fill="rgba(255,0,0,.5)"
-          stroke="rgba(255,0,0,.5)"
-          strokeWidth={2}
-          draggable
-          // sceneFunc={console.log}
-          onDblClick={() => handleSelect(node.id)}
-          onDragEnd={e => {/** USE THIS FOR UPDATING */}}
-          onDragMove={(e) => handleDragEnd(node.id, e)}
-          listening={true}
-          ref={(nodeRef) => {
-            if (selectedShape === node.id && nodeRef) {
-              transformerRef.current.nodes([nodeRef]);
-              transformerRef.current.getLayer().batchDraw();
-            }
-          }}
-          onMouseEnter={(e) => {
-            setHandlesVisibleId(node.id);
-            setHandlesPosition({ x: e.target.x(), y: e.target.y() });
-          }}
-          onMouseLeave={() => {
-            setHandlesVisibleId(null);
-            setConnectingShapeId(null);
-          }}
-          onMouseDown={() => {
-            setConnectingShapeId(node.id);
-          }}
-          onTransformEnd={(e) => handleTransformEnd(node.id, e)}
-        />
-        <Text
-          x={x + w / 2}
-          y={y + h / 2}
-          text={node?.keyname}
-          fontSize={14}
-          fontFamily="Arial"
-          fill="black"
-          align="center"
-          verticalAlign="middle"
-          offsetX={w / 4}
-          offsetY={h / 4}
-        />
-
-        <ConnectionHandlerBox
-          node={node}
-          setToFromLocs={setToFromLocs}
-          callback={handleConnectionEnd}
-          display={handlesVisibleId === node.id}
-          onMouseEnter={(e) => {
-            setHandlesVisibleId(node.id);
-            setHandlesPosition({ x: e.target.x(), y: e.target.y() });
-          }}
-          onMouseLeave={() => {
-            setHandlesVisibleId(null);
-            setConnectingShapeId(null);
-          }}
-          onMouseDown={() => {
-            setConnectingShapeId(node.id);
-          }}
-        />
-
-        {selectedShape && (
-          <Transformer
-            ref={transformerRef}
-            boundBoxFunc={(oldBox, newBox) => {
-              if (newBox.width < 5 || newBox.height < 5) {
-                return oldBox;
+        <>
+          <Rect
+            id={node.id}
+            x={x - DISTANCE - SPILL}
+            y={y - DISTANCE - SPILL}
+            width={w + (2 * DISTANCE) + (2 * SPILL)}
+            height={h + (2 * DISTANCE) + (2 * SPILL)}
+            stroke="rgba(255,0,0,.05)"
+            strokeWidth={2}
+            onMouseEnter={(e) => {
+              setHandlesVisibleId(node.id);
+              setHandlesPosition({ x: e.target.x(), y: e.target.y() });
+            }}
+            onMouseLeave={() => {
+              setHandlesVisibleId(null);
+              setConnectingShapeId(null);
+            }}
+            onMouseDown={() => {
+              setConnectingShapeId(node.id);
+            }}
+            pointerEvents="none"
+          ></Rect>
+          <Rect
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            fill="rgba(255,0,0,.5)"
+            stroke="rgba(255,0,0,.5)"
+            strokeWidth={2}
+            draggable
+            // sceneFunc={console.log}
+            onDblClick={() => handleSelect(node.id)}
+            onDragEnd={e => {/** USE THIS FOR UPDATING */}}
+            onDragMove={(e) => handleDragEnd(node.id, e)}
+            listening={true}
+            ref={(nodeRef) => {
+              if (selectedShape === node.id && nodeRef) {
+                transformerRef.current.nodes([nodeRef]);
+                transformerRef.current.getLayer().batchDraw();
               }
-              return newBox;
+            }}
+            onMouseEnter={(e) => {
+              setHandlesVisibleId(node.id);
+              setHandlesPosition({ x: e.target.x(), y: e.target.y() });
+            }}
+            onMouseLeave={() => {
+              setHandlesVisibleId(null);
+              setConnectingShapeId(null);
+            }}
+            onMouseDown={() => {
+              setConnectingShapeId(node.id);
+            }}
+            onTransformEnd={(e) => handleTransformEnd(node.id, e)}
+          />
+          <Text
+            x={x + w / 2}
+            y={y + h / 2}
+            text={node?.keyname}
+            fontSize={14}
+            fontFamily="Arial"
+            fill="black"
+            align="center"
+            verticalAlign="middle"
+            offsetX={w / 4}
+            offsetY={h / 4}
+          />
+
+          <ConnectionHandlerBox
+            node={node}
+            setToFromLocs={setToFromLocs}
+            callback={handleConnectionEnd}
+            display={handlesVisibleId === node.id}
+            onMouseEnter={(e) => {
+              setHandlesVisibleId(node.id);
+              setHandlesPosition({ x: e.target.x(), y: e.target.y() });
+            }}
+            onMouseLeave={() => {
+              setHandlesVisibleId(null);
+              setConnectingShapeId(null);
+            }}
+            onMouseDown={() => {
+              setConnectingShapeId(node.id);
             }}
           />
-        )}
+
+          {selectedShape && (
+            <Transformer
+              ref={transformerRef}
+              boundBoxFunc={(oldBox, newBox) => {
+                if (newBox.width < 5 || newBox.height < 5) {
+                  return oldBox;
+                }
+                return newBox;
+              }}
+            />
+          )}
+        </>
       </React.Fragment>
     );
+
+    const parent = getNode(node.parentId)
+
+    const getConnectorHandleLoc = (from) => {
+      if (!from.includes('.')) {
+        return [0,0]
+      }
+
+      const fromTokens = from.split('.')
+      const fromId = fromTokens[0]
+      const fromPoint = fromTokens[1]
+      const node = getNode(fromId)
+      const output = []
+      switch (fromPoint) {
+        case 0:
+          output = [
+            node.x - DISTANCE,
+            node.y - DISTANCE
+          ]
+          break
+        case 1:
+          output = [
+            node.x + (node.w/2),
+            node.y - DISTANCE
+          ]
+          break
+        case 2:
+          output = [
+            node.x + node.w + DISTANCE,
+            node.y - DISTANCE
+          ]
+          break
+        case 3:
+          output = [
+            node.x + (node.w) + DISTANCE,
+            node.y + (node.h/2)
+          ]
+          break
+        case 4:
+          output = [
+            node.x + node.w + DISTANCE,
+            node.y + node.h + DISTANCE,
+          ]
+          break
+        case 5:
+          output = [
+            node.x + (node.w/2),
+            node.y + node.h + DISTANCE
+          ]
+          break
+        case 6:
+          output = [
+            node.x,
+            node.y
+          ]
+          break
+        case 7:
+          output = [
+            node.x - DISTANCE,
+            node.y + node.h + DISTANCE
+          ]
+          break
+        case 8:
+          output = [
+            node.x - DISTANCE,
+            node.y + (node.h/2)
+          ]
+          break
+      }
+    }
 
     // Draw connection to the parent
     if (parent) {
@@ -515,15 +585,7 @@ const App = ({ itemId = 0}) => {
       );
     }
 
-    // Recursively draw child nodes
-    if (node.children && node.children.length > 0) {
-      node.children.forEach(child => {
-        // console.log('child', child)
-        elements.push(...drawNodes(child, node));
-      });
-    }
-
-    return elements;
+    return elements
   };
 
   return (
@@ -537,7 +599,9 @@ const App = ({ itemId = 0}) => {
           <Transformer
             ref={transformerRef}
           />
-          {drawNodes(graph)}
+          {
+            [...nodes.values()].map(node => drawNodes(node))
+          }
         </Layer>
       </Stage>
     </div>
