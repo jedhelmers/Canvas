@@ -255,15 +255,16 @@ const App = ({ itemId = 0}) => {
   }
 
   // Function to handle shape selection
-  const handleSelect = (id) => {
+  const handleSelect = (id, pos = 4) => {
     setSelectedShape(id);
     setCurrentNode(id);
     // console.log(id)
+    // console.log(connecting)
     if (connecting.from === null) {
       setConnecting({ from: id, to: null });
     } else if (connecting.to === null && connecting.from !== id) {
       setConnecting((prevConnecting) => ({ ...prevConnecting, to: id }));
-      addConnection(connecting.from, id);
+      addConnection(connecting.from, id, pos);
       setConnecting({ from: null, to: null });
     }
   };
@@ -328,8 +329,8 @@ const App = ({ itemId = 0}) => {
   };
 
   // Function to add a parent-child connection
-  const addConnection = (fromId, toId) => {
-    addChild(fromId, toId, 4);
+  const addConnection = (fromId, toId, pos) => {
+    addChild(fromId, toId, pos);
   };
 
   // Function to draw connections
@@ -435,7 +436,7 @@ const App = ({ itemId = 0}) => {
       childNode.parentId = parentNode.id
       updateNode(childNode.id, childNode)
 
-      parentNode.children.push(childNode.id)
+      parentNode.children.push({id: `${childNode.id}`, pos: childNode.pos})
       updateNode(parentNode.id, parentNode)
     }
   }, [toFrom])
@@ -444,13 +445,14 @@ const App = ({ itemId = 0}) => {
     if (itemId === 0) {
       let item1 = metadataItem(0, 'root', null);
       addNode(item1);
-      addChild(null, 1, 4);
+      addChild(null, 1, 0);
 
       for (let i = 1; i < 5; i++) {
         const parentId = Math.floor(i * Math.random())
         let temp = metadataItem(i, `key${i}`, parentId)
+        // console.log({temp})
         addNode(temp);
-        addChild(parentId, i, 4);
+        addChild(parentId, i, Math.floor(8 * Math.random()));
       }
     }
   }, []);

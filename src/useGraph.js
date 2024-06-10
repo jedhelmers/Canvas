@@ -103,10 +103,8 @@ const useGraph = () => {
             const childNode = newNodes.get(`${childId}`);
             
             if (parentNode && childNode) {
-                childNode.pos = pos
-
-                if (!parentNode.children.includes(`${childId}`)) {
-                    parentNode.children.push(`${childId}`);
+                if (!parentNode.children.indexOf(child => child.id === `${childId}`) > -1) {
+                    parentNode.children.push({id: `${childId}`, pos: pos});
                     newNodes.set(`${childId}`, { ...childNode, parentId: `${parentId}` });
                 }
             }
