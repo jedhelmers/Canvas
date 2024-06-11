@@ -1,145 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Text, Stage, Layer, Rect, Circle, Arrow, Line, Transformer } from 'react-konva';
+import ProcessItem from './shapes/process'
+import { DISTANCE, metadataItem } from './utils';
 import useGraph from './useGraph';
 import './App.css';
-
-
-const DISTANCE = 8
-const SPILL = 4
-
-
-const metadataItem = (id, keyname, parentId, x=(Math.random() * 400), y=(Math.random() * 400), h=40, w=80) => ({
-  id: String(id),
-  keyname,
-  parentId: String(parentId),
-  children: [],
-  x,
-  y,
-  h,
-  w
-})
-
-
-const ConnectionHandlerBox = ({node, callback, display, onMouseEnter, onMouseLeave, setToFromLocs}) => {
-  return display ? (
-      <>
-      {/* Corners */}
-        <Circle
-          x={node.x + node.w + DISTANCE}
-          y={node.y + node.h + DISTANCE}
-          radius={5}
-          fill="rgba(0, 0, 0, .25)"
-          stroke="white"
-          strokeWidth={2}
-          listening={true}
-          onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id, 4)}
-          onMouseDown={(e) => e.cancelBubble = true}
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
-        />
-        <Circle
-          x={node.x + node.w + DISTANCE}
-          y={node.y - DISTANCE}
-          radius={5}
-          fill="rgba(0, 0, 0, .25)"
-          stroke="white"
-          strokeWidth={2}
-          onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id, 2)}
-          onMouseDown={(e) => e.cancelBubble = true}
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
-        />
-        <Circle
-          x={node.x - DISTANCE}
-          y={node.y - DISTANCE}
-          radius={5}
-          fill="rgba(0, 0, 0, .25)"
-          stroke="white"
-          strokeWidth={2}
-          onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id, 0)}
-          onMouseDown={(e) => e.cancelBubble = true}
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
-        />
-        <Circle
-          x={node.x - DISTANCE}
-          y={node.y + node.h + DISTANCE}
-          radius={5}
-          fill="rgba(0, 0, 0, .25)"
-          stroke="white"
-          strokeWidth={2}
-          onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id, 7)}
-          onMouseDown={(e) => e.cancelBubble = true}
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={onMouseEnter}
-        />
-
-        {/* Top + Bottom */}
-        <Circle
-          x={node.x + (node.w/2)}
-          y={node.y + node.h + DISTANCE}
-          radius={5}
-          fill="rgba(0, 0, 0, .25)"
-          stroke="white"
-          strokeWidth={2}
-          draggable
-          onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id, 5)}
-          onMouseDown={(e) => e.cancelBubble = true}
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={onMouseEnter}
-        />
-        <Circle
-          x={node.x + (node.w/2)}
-          y={node.y - DISTANCE}
-          radius={5}
-          fill="rgba(0, 0, 0, .25)"
-          stroke="white"
-          strokeWidth={2}
-          draggable
-          onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id, 1)}
-          onMouseDown={(e) => e.cancelBubble = true}
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={onMouseEnter}
-        />
-
-        {/* Sides */}
-        <Circle
-          x={node.x - DISTANCE}
-          y={node.y + (node.h/2)}
-          radius={5}
-          fill="rgba(0, 0, 0, .25)"
-          stroke="white"
-          strokeWidth={2}
-          draggable
-          onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id, 8)}
-          onMouseDown={(e) => e.cancelBubble = true}
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={onMouseEnter}
-        />
-        <Circle
-          x={node.x + (node.w) + DISTANCE}
-          y={node.y + (node.h/2)}
-          radius={5}
-          fill="rgba(0, 0, 0, .25)"
-          stroke="white"
-          strokeWidth={2}
-          draggable
-          onDragEnd={(e) => callback(e)}
-          onClick={(e) => setToFromLocs(node.id, 3)}
-          onMouseDown={(e) => e.cancelBubble = true}
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={onMouseEnter}
-        />
-      </>
-  ) : null
-}
 
 
 const App = ({ itemId = 0}) => {
@@ -492,125 +356,34 @@ const App = ({ itemId = 0}) => {
   
     // Create rectangle for the node
     elements.push(
-      <React.Fragment key={node.id}>
-        <>
-          <Rect
-            id={node.id}
-            x={x - DISTANCE - SPILL}
-            y={y - DISTANCE - SPILL}
-            width={w + (2 * DISTANCE) + (2 * SPILL)}
-            height={h + (2 * DISTANCE) + (2 * SPILL)}
-            stroke="rgba(255,0,0,.05)"
-            strokeWidth={2}
-            onMouseEnter={(e) => {
-              setHandlesVisibleId(node.id);
-              setHandlesPosition({ x: e.target.x(), y: e.target.y() });
-            }}
-            onMouseLeave={() => {
-              setHandlesVisibleId(null);
-              setConnectingShapeId(null);
-            }}
-            onMouseDown={() => {
-              setConnectingShapeId(node.id);
-            }}
-            pointerEvents="none"
-          ></Rect>
-          <Rect
-            x={x}
-            y={y}
-            width={w}
-            height={h}
-            fill="rgba(255,0,0,.5)"
-            stroke="rgba(255,0,0,.5)"
-            strokeWidth={2}
-            draggable
-            // sceneFunc={console.log}
-            onDblClick={() => handleSelect(node.id)}
-            onDragEnd={e => {/** USE THIS FOR UPDATING */}}
-            onDragMove={(e) => handleDragEnd(node.id, e)}
-            listening={true}
-            ref={(nodeRef) => {
-              if (selectedShape === node.id && nodeRef) {
-                transformerRef.current.nodes([nodeRef]);
-                transformerRef.current.getLayer().batchDraw();
-              }
-            }}
-            onMouseEnter={(e) => {
-              setHandlesVisibleId(node.id);
-              setHandlesPosition({ x: e.target.x(), y: e.target.y() });
-            }}
-            onMouseLeave={() => {
-              setHandlesVisibleId(null);
-              setConnectingShapeId(null);
-            }}
-            onMouseDown={() => {
-              setConnectingShapeId(node.id);
-            }}
-            onTransformEnd={(e) => handleTransformEnd(node.id, e)}
-          />
-          <Text
-            x={x + w / 2}
-            y={y + h / 2}
-            text={node?.keyname}
-            fontSize={14}
-            fontFamily="Arial"
-            fill="black"
-            align="center"
-            verticalAlign="middle"
-            offsetX={w / 4}
-            offsetY={h / 4}
-          />
-
-          <ConnectionHandlerBox
-            node={node}
-            setToFromLocs={setToFromLocs}
-            callback={handleConnectionEnd}
-            display={handlesVisibleId === node.id}
-            onMouseEnter={(e) => {
-              setHandlesVisibleId(node.id);
-              setHandlesPosition({ x: e.target.x(), y: e.target.y() });
-            }}
-            onMouseLeave={() => {
-              setHandlesVisibleId(null);
-              setConnectingShapeId(null);
-            }}
-            onMouseDown={() => {
-              setConnectingShapeId(node.id);
-            }}
-          />
-
-          {selectedShape && (
-            <Transformer
-              ref={transformerRef}
-              boundBoxFunc={(oldBox, newBox) => {
-                if (newBox.width < 5 || newBox.height < 5) {
-                  return oldBox;
-                }
-                return newBox;
-              }}
-            />
-          )}
-        </>
-      </React.Fragment>
+      <ProcessItem
+        node={node}
+        w={w}
+        x={x}
+        y={y}
+        h={h}
+        setHandlesVisibleId={setHandlesVisibleId}
+        setHandlesPosition={setHandlesPosition}
+        handleSelect={handleSelect}
+        handleDragEnd={handleDragEnd}
+        selectedShape={selectedShape}
+        setConnectingShapeId={setConnectingShapeId}
+        transformerRef={transformerRef}
+        setToFromLocs={setToFromLocs}
+        handleTransformEnd={handleTransformEnd}
+        handleConnectionEnd={handleConnectionEnd}
+      />
     );
 
     const parent = getNode(node.parentId)
 
     // Draw connection to the parent
     if (parent) {
-      // console.log(parent)
       const [parentX, parentY] = getConnectorHandleLoc(parent.id, 5)
       const [nodeX, nodeY] = getConnectorHandleLoc(node.id, 3)
 
-      // console.log(createAdvancedOrthogonalPath([parentX, parentY], [nodeX, nodeY]))
       elements.push(
         <Line
-          // points={[
-          //   parentX,
-          //   parentY,
-          //   nodeX,
-          //   nodeY
-          // ]}
           points={
             createAdvancedOrthogonalPath([parentX, parentY], [nodeX, nodeY]).flat()
           }
