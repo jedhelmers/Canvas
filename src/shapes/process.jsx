@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Text, Stage, Layer, Rect, Circle, Arrow, Line, Transformer } from 'react-konva';
+import { Text, Rect, Transformer } from 'react-konva';
 import ConnectionHandlerBox from './connectionHandlerBox'
 import { DISTANCE, SPILL } from '../utils';
 
@@ -34,15 +34,15 @@ const ProcessItem = ({
                 stroke="rgba(255,0,0,.05)"
                 strokeWidth={2}
                 onMouseEnter={(e) => {
-                setHandlesVisibleId(node.id);
-                setHandlesPosition({ x: e.target.x(), y: e.target.y() });
+                    setHandlesVisibleId(node.id);
+                    setHandlesPosition({ x: e.target.x(), y: e.target.y() });
                 }}
                 onMouseLeave={() => {
-                setHandlesVisibleId(null);
-                setConnectingShapeId(null);
+                    setHandlesVisibleId(null);
+                    setConnectingShapeId(null);
                 }}
                 onMouseDown={() => {
-                setConnectingShapeId(node.id);
+                    setConnectingShapeId(node.id);
                 }}
                 pointerEvents="none"
             ></Rect>

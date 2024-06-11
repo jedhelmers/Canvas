@@ -47,11 +47,20 @@ const WorkflowItem = ({
                 pointerEvents="none"
             ></Rect>
             <Rect
+                x={x + 10}
+                y={y}
+                width={w - 20}
+                height={h}
+                stroke="rgba(0,0,0,0.1)"
+                strokeWidth={2}
+                listening={false}
+            />
+            <Rect
                 x={x}
                 y={y}
                 width={w}
                 height={h}
-                fill="rgba(255,0,0,.5)"
+                fill="rgba(255,255,255,.5)"
                 stroke="rgba(255,0,0,.5)"
                 strokeWidth={2}
                 draggable

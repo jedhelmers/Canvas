@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Text, Stage, Layer, Rect, Circle, Arrow, Line, Transformer } from 'react-konva';
 import ProcessItem from './shapes/process'
+import WorkflowItem from './shapes/workflow'
 import { DISTANCE, metadataItem } from './utils';
 import useGraph from './useGraph';
 import './App.css';
