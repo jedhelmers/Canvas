@@ -391,15 +391,24 @@ const App = ({ itemId = 0}) => {
     // console.log(getConnectorHandleLoc(id, pos))
 
     if (id && !toFrom.includes(id)) {
-      if (!toFrom[0]) {
+      if (!toFrom[0]?.id) {
         setToFrom([
-          id,
+          {
+            id,
+            pos
+          },
           null
         ])
-      } else if (!toFrom[1]) {
+      } else if (!toFrom[1]?.id) {
         setToFrom([
-          toFrom[0],
-          id
+          {
+            id: toFrom[0].id,
+            pos: toFrom[0].pos
+          },
+          {
+            id,
+            pos
+          },
         ])
       } else {
         setToFrom([null, null])
@@ -428,16 +437,20 @@ const App = ({ itemId = 0}) => {
   }
 
   useEffect(() => {
-    // console.log(toFrom)
-    if (toFrom[0] && toFrom[1]) {
-      const parentNode = getNode(toFrom[0])
-      const childNode = getNode(toFrom[1])
+    if (toFrom[0]?.id && toFrom[1]?.id) {
+      const parentNode = getNode(toFrom[0].id)
+      const childNode = getNode(toFrom[1].id)
 
       childNode.parentId = parentNode.id
       updateNode(childNode.id, childNode)
 
-      parentNode.children.push({id: `${childNode.id}`, pos: childNode.pos})
+      console.log({id: `${childNode.id}`, posTo: toFrom[1]?.pos, posFrom: toFrom[0]?.pos})
+
+      parentNode.children.push({id: `${childNode.id}`, posTo: toFrom[1]?.pos, posFrom: toFrom[0]?.pos})
       updateNode(parentNode.id, parentNode)
+
+      // Reset
+      setToFrom([null, null])
     }
   }, [toFrom])
 
@@ -458,7 +471,7 @@ const App = ({ itemId = 0}) => {
   }, []);
 
   useEffect(() => {
-    console.log(nodes)
+    // console.log(nodes)
   }, [nodes])
 
   useEffect(() => {
@@ -585,6 +598,7 @@ const App = ({ itemId = 0}) => {
 
     // Draw connection to the parent
     if (parent) {
+      // console.log(parent)
       const [parentX, parentY] = getConnectorHandleLoc(parent.id, 5)
       const [nodeX, nodeY] = getConnectorHandleLoc(node.id, 3)
 
