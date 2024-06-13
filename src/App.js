@@ -4,7 +4,7 @@ import ProcessItem from './shapes/process'
 import WorkflowItem from './shapes/workflow'
 import Toolbar from './shapes/toolbar';
 import Grid from './shapes/grid';
-import { DISTANCE, metadataItem } from './utils';
+import { DISTANCE, PADDING, metadataItem } from './utils';
 import useGraph from './useGraph';
 import './App.css';
 
@@ -85,7 +85,7 @@ const App = ({ itemId = 0}) => {
       case '0':
         return [
           node.x - DISTANCE,
-          node.y - DISTANCE
+          node.y - DISTANCE,
         ]
       case '1':
         return [
@@ -134,6 +134,7 @@ const App = ({ itemId = 0}) => {
 
   // Function to handle shape selection
   const handleSelect = (id, pos = 4) => {
+    console.log('WEW')
     setSelectedShape(id);
     setCurrentNode(id);
     // console.log(id)
@@ -155,10 +156,10 @@ const App = ({ itemId = 0}) => {
 
     if (true || ~~e.target.x() % (cellSize / 2) === 0 || ~~e.target.y() % (cellSize / 2) === 0) {
       const updatedShape = { ...node, x: e.target.x(), y: e.target.y() };
-  
+
       // Update node position in the graph
       updateNode(id, { x: updatedShape.x, y: updatedShape.y });
-  
+
       // Update shapes with the new position (if necessary)
       setShapes(prevShapes => {
         const shapeIndex = prevShapes.findIndex(shape => shape.id === id);
@@ -260,6 +261,7 @@ const App = ({ itemId = 0}) => {
       const shapeId = shape.attrs.id;
       if (shapeId && connectingShapeId !== shapeId) {
         // Create a connection from connectingShapeId to shapeId
+        console.log('WOO')
         addChild(connectingShapeId, shapeId, 4);
       }
     }
@@ -269,14 +271,14 @@ const App = ({ itemId = 0}) => {
   };
 
   const setToFromLocs = (id, pos) => {
-    // console.log(getConnectorHandleLoc(id, pos))
+    // console.log(pos)
 
     if (id && !toFrom.includes(id)) {
       if (!toFrom[0]?.id) {
         setToFrom([
           {
             id,
-            pos
+            posTo: pos
           },
           null
         ])
@@ -284,11 +286,11 @@ const App = ({ itemId = 0}) => {
         setToFrom([
           {
             id: toFrom[0].id,
-            pos: toFrom[0].pos
+            posTo: toFrom[0].posTo
           },
           {
             id,
-            pos
+            posTo: pos
           },
         ])
       } else {
@@ -299,16 +301,36 @@ const App = ({ itemId = 0}) => {
 
   const createAdvancedOrthogonalPath = (startPoint, endPoint, middlePoint = null) => {
     const path = [startPoint];
+    const [startX, startY] = startPoint;
+    const [endX, endY] = endPoint;
 
-    if (middlePoint) {
-        // Move horizontally to the middle point's x, then vertically to the middle point's y
-        path.push([middlePoint[0], startPoint[1]]);
+    // Determine the direction to extend the padding
+    const horizontalPadding = startX < endX ? PADDING : -PADDING;
+    const verticalPadding = startY < endY ? PADDING : -PADDING;
+
+    // Extend outward by PADDING pixels before bending
+    if (Math.abs(endX - startX) > Math.abs(endY - startY)) {
+      // Horizontal path
+      path.push([startX + horizontalPadding, startY]);
+
+      if (middlePoint) {
+        path.push([middlePoint[0], startY + verticalPadding]);
         path.push(middlePoint);
-        // Move vertically to the end point's y, keeping middle point's x
-        path.push([middlePoint[0], endPoint[1]]);
+        path.push([middlePoint[0], endY - verticalPadding]);
+      } else {
+        path.push([endX - horizontalPadding, startY]);
+      }
     } else {
-        // Move horizontally to the same x coordinate as the end point
-        path.push([endPoint[0], startPoint[1]]);
+      // Vertical path
+      path.push([startX, startY + verticalPadding]);
+
+      if (middlePoint) {
+        path.push([startX + horizontalPadding, middlePoint[1]]);
+        path.push(middlePoint);
+        path.push([endX - horizontalPadding, middlePoint[1]]);
+      } else {
+        path.push([startX, endY - verticalPadding]);
+      }
     }
 
     // Finally, move to the end point
@@ -325,9 +347,7 @@ const App = ({ itemId = 0}) => {
       childNode.parentId = parentNode.id
       updateNode(childNode.id, childNode)
 
-      console.log({id: `${childNode.id}`, posTo: toFrom[1]?.pos, posFrom: toFrom[0]?.pos})
-
-      parentNode.children.push({id: `${childNode.id}`, posTo: toFrom[1]?.pos, posFrom: toFrom[0]?.pos})
+      parentNode.children.push({id: `${childNode.id}`, posTo: toFrom[1]?.posTo, posFrom: toFrom[0]?.posFrom})
       updateNode(parentNode.id, parentNode)
 
       // Reset
@@ -344,9 +364,8 @@ const App = ({ itemId = 0}) => {
       for (let i = 1; i < 5; i++) {
         const parentId = Math.floor(i * Math.random())
         let temp = metadataItem({id: i, keyname: `key${i}`, parentId: parentId})
-        // console.log({temp})
         addNode(temp);
-        addChild(parentId, i, Math.floor(8 * Math.random()));
+        addChild(parentId, i, Math.floor(8 * Math.random()), Math.floor(8 * Math.random()));
       }
     }
   }, []);
@@ -381,7 +400,7 @@ const App = ({ itemId = 0}) => {
     if (!node) return
 
     const elements = [];
-  
+
     // Create rectangle for the node
     elements.push(
       <ProcessItem
@@ -402,26 +421,26 @@ const App = ({ itemId = 0}) => {
     return elements
   };
 
-  const drawLines = (node) => {
-    if (!node) return
+  const drawLines = () => {
+    if (!nodes) return
 
     const elements = [];
-    const parent = getNode(node.parentId)
 
-    // Draw connection to the parent
-    if (parent) {
-      const [parentX, parentY] = getConnectorHandleLoc(parent.id, 5)
-      const [nodeX, nodeY] = getConnectorHandleLoc(node.id, 3)
+    for (const parentNode of [...nodes.values()]) {
+      for (const childLine of parentNode.children) {
+        const fromCoords = getConnectorHandleLoc(parentNode.id, childLine.posFrom)
+        const toCoords = getConnectorHandleLoc(childLine.id, childLine.posTo)
 
-      elements.push(
-        <Line
-          points={
-            createAdvancedOrthogonalPath([parentX, parentY], [nodeX, nodeY]).flat()
-          }
-          stroke="black"
-          fill="black"
-        />
-      );
+        elements.push(
+          <Line
+            points={
+              createAdvancedOrthogonalPath(fromCoords, toCoords).flat()
+            }
+            stroke="black"
+            fill="black"
+          />
+        )
+      }
     }
 
     return elements
@@ -439,9 +458,7 @@ const App = ({ itemId = 0}) => {
           <Grid width={stageWidth} height={stageHeight} cellSize={cellSize} />
         </Layer>
         <Layer>
-          {
-            [...nodes.values()].map(node => drawLines(node))
-          }
+          {drawLines()}
         </Layer>
         <Layer ref={layerRef}>
           <Transformer

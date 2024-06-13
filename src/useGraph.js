@@ -95,16 +95,19 @@ const useGraph = () => {
         });
     }, []);
 
-    const addChild = useCallback((parentId, childId, pos) => {
-        // console.log('addChild')
+    const addChild = useCallback((parentId, childId, posTo = 0, posFrom = 0) => {
         setNodes(prev => {
             const newNodes = new Map(prev);
             const parentNode = newNodes.get(`${parentId}`);
             const childNode = newNodes.get(`${childId}`);
-            
+
             if (parentNode && childNode) {
                 if (!parentNode.children.indexOf(child => child.id === `${childId}`) > -1) {
-                    parentNode.children.push({id: `${childId}`, pos: pos});
+                    parentNode.children.push({
+                        id: `${childId}`,
+                        posTo: posTo,
+                        posFrom: posFrom
+                    });
                     newNodes.set(`${childId}`, { ...childNode, parentId: `${parentId}` });
                 }
             }

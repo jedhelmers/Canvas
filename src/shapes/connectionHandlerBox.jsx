@@ -15,8 +15,8 @@ const POINTS = (node) => [
   {x: -node.w - DISTANCE, y: -node.h/2}, // R SIDE 3
   {x: -node.w - DISTANCE, y: -node.h - DISTANCE}, // BR CORNER 4
   {x: -node.w/2, y: -node.h - DISTANCE}, // BOTTOM C 5
-  {x: DISTANCE, y: -node.h - DISTANCE}, // BL CORNER 7
-  {x: DISTANCE, y: -node.h/2}, // L SIDE 8
+  {x: DISTANCE, y: -node.h - DISTANCE}, // BL CORNER 6
+  {x: DISTANCE, y: -node.h/2}, // L SIDE 7
 ]
 
 

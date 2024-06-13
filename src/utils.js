@@ -1,5 +1,6 @@
 const DISTANCE = 4
 const SPILL = 8
+const PADDING = 10
 
 const metadataItem = ({
     id,
@@ -24,5 +25,6 @@ const metadataItem = ({
 export {
     DISTANCE,
     SPILL,
+    PADDING,
     metadataItem
 }
