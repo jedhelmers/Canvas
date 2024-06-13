@@ -1,12 +1,15 @@
-const DISTANCE = 8
-const SPILL = 4
+const DISTANCE = 4
+const SPILL = 8
 
-const metadataItem = (
+const metadataItem = ({
     id,
     keyname,
     parentId,
-    x=(Math.random() * 400), y=(Math.random() * 400), h=40, w=80
-) => ({
+    x=(Math.random() * 400),
+    y=(Math.random() * 400),
+    h=60,
+    w=120
+}) => ({
     id: String(id),
     keyname,
     parentId: String(parentId),

@@ -2,12 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Text, Stage, Layer, Rect, Circle, Arrow, Line, Transformer } from 'react-konva';
 import ProcessItem from './shapes/process'
 import WorkflowItem from './shapes/workflow'
+import Toolbar from './shapes/toolbar';
+import Grid from './shapes/grid';
 import { DISTANCE, metadataItem } from './utils';
 import useGraph from './useGraph';
 import './App.css';
 
 
 const App = ({ itemId = 0}) => {
+  const [stageWidth, setStageWidth] = useState(window.innerWidth);
+  const [stageHeight, setStageHeight] = useState(window.innerHeight);
+  const [cellSize, setCellSize] = useState(20);
   const [shapes, setShapes] = useState([]);
   const [graph, setGraph] = useState({})
   const [selectedShape, setSelectedShape] = useState(null);
@@ -38,20 +43,28 @@ const App = ({ itemId = 0}) => {
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   // Function to add new shapes with string-based IDs
-  const addShape = (type) => {
+  const addShape = (type, x = 10, y = 10) => {
     const id = generateId();
-    const newShape = {
+    // const newShape = {
+    //   id,
+    //   type,
+    //   x,
+    //   y,
+    //   width: 50,
+    //   height: 50,
+    //   radius: 25,
+    //   fill: 'rgba(255,0,0,.5)',
+    //   stroke: 'rgba(255,0,0,.5)',
+    //   strokeWidth: 2,
+    // };
+
+    const newShape = metadataItem({
       id,
-      type,
-      x: Math.random() * window.innerWidth / 2,
-      y: Math.random() * window.innerHeight / 2,
-      width: 50,
-      height: 50,
-      radius: 25,
-      fill: 'rgba(255,0,0,.5)',
-      stroke: 'rgba(255,0,0,.5)',
-      strokeWidth: 2,
-    };
+      keyname: "Process",
+      parentId: null,
+      x,
+      y
+    })
 
     // Add shape to the state
     setShapes((prevShapes) => [
@@ -140,43 +153,46 @@ const App = ({ itemId = 0}) => {
     const node = getNode(id); // Directly get the node
     if (!node) return;
 
-    const updatedShape = { ...node, x: e.target.x(), y: e.target.y() };
-
-    // Update node position in the graph
-    updateNode(id, { x: updatedShape.x, y: updatedShape.y });
-
-    // Update shapes with the new position (if necessary)
-    setShapes(prevShapes => {
-      const shapeIndex = prevShapes.findIndex(shape => shape.id === id);
-      if (shapeIndex !== -1) {
-        const newShapes = [...prevShapes];
-        newShapes[shapeIndex] = updatedShape;
-        return newShapes;
-      }
-      return prevShapes;
-    });
+    if (true || ~~e.target.x() % (cellSize / 2) === 0 || ~~e.target.y() % (cellSize / 2) === 0) {
+      const updatedShape = { ...node, x: e.target.x(), y: e.target.y() };
+  
+      // Update node position in the graph
+      updateNode(id, { x: updatedShape.x, y: updatedShape.y });
+  
+      // Update shapes with the new position (if necessary)
+      setShapes(prevShapes => {
+        const shapeIndex = prevShapes.findIndex(shape => shape.id === id);
+        if (shapeIndex !== -1) {
+          const newShapes = [...prevShapes];
+          newShapes[shapeIndex] = updatedShape;
+          return newShapes;
+        }
+        return prevShapes;
+      });
+    }
   };
 
   // Function to handle shape transformation
   const handleTransformEnd = (id, e) => {
     console.log(id, e)
     const node = getNode(id); // Directly get the node
+
     if (!node) return;
 
-    const scaleX = e.target.scaleX();
-    const scaleY = e.target.scaleY();
+    // const scaleX = e.target.scaleX();
+    // const scaleY = e.target.scaleY();
 
     // Update the node's dimensions and position
     const updatedNode = {
-      x: e.target.x(),
-      y: e.target.y(),
-      w: Math.max(5, e.target.width() * scaleX),  // Ensure minimum width
-      h: Math.max(5, e.target.height() * scaleY)  // Ensure minimum height
+      x: e.x,
+      y: e.y,
+      w: e.width,
+      h: e.height
     };
 
     // Reset scale to avoid cumulative scaling issues
-    e.target.scaleX(1);
-    e.target.scaleY(1);
+    // e.target.scaleX(1);
+    // e.target.scaleY(1);
 
     // Update node dimensions in the graph
     updateNode(id, updatedNode);
@@ -321,13 +337,13 @@ const App = ({ itemId = 0}) => {
 
   useEffect(() => {
     if (itemId === 0) {
-      let item1 = metadataItem(0, 'root', null);
+      let item1 = metadataItem({id: 0, keyname: 'root', parentId: null});
       addNode(item1);
       addChild(null, 1, 0);
 
       for (let i = 1; i < 5; i++) {
         const parentId = Math.floor(i * Math.random())
-        let temp = metadataItem(i, `key${i}`, parentId)
+        let temp = metadataItem({id: i, keyname: `key${i}`, parentId: parentId})
         // console.log({temp})
         addNode(temp);
         addChild(parentId, i, Math.floor(8 * Math.random()));
@@ -346,23 +362,30 @@ const App = ({ itemId = 0}) => {
     setGraph(reconstructNestedJSON(0))
   }, [itemId, getNode, getChildNodes, currentNode]);
 
-  const drawNodes = (node) => {
+  // useEffect to handle window resize
+  useEffect(() => {
+      const handleResize = () => {
+          setStageHeight(window.innerHeight);
+          setStageWidth(window.innerWidth)
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      // Cleanup function to remove event listener
+      return () => {
+          window.removeEventListener('resize', handleResize);
+      };
+  }, []);
+
+  const drawShapeNodes = (node) => {
     if (!node) return
 
     const elements = [];
-    const x = node?.x || 0;
-    const y = node?.y || 0;
-    const w = node?.w || 80;
-    const h = node?.h || 40;
   
     // Create rectangle for the node
     elements.push(
       <ProcessItem
         node={node}
-        w={w}
-        x={x}
-        y={y}
-        h={h}
         setHandlesVisibleId={setHandlesVisibleId}
         setHandlesPosition={setHandlesPosition}
         handleSelect={handleSelect}
@@ -376,6 +399,13 @@ const App = ({ itemId = 0}) => {
       />
     );
 
+    return elements
+  };
+
+  const drawLines = (node) => {
+    if (!node) return
+
+    const elements = [];
     const parent = getNode(node.parentId)
 
     // Draw connection to the parent
@@ -400,16 +430,25 @@ const App = ({ itemId = 0}) => {
   return (
     <div>
       <div className="controls">
+        <Toolbar onDragEnd={addShape}/>
         <button onClick={() => addShape('rect')}>Add Rectangle</button>
         <button onClick={() => addShape('circle')}>Add Circle</button>
       </div>
-      <Stage width={window.innerWidth} height={window.innerHeight}>
+      <Stage width={stageWidth} height={stageHeight}>
+        <Layer>
+          <Grid width={stageWidth} height={stageHeight} cellSize={cellSize} />
+        </Layer>
+        <Layer>
+          {
+            [...nodes.values()].map(node => drawLines(node))
+          }
+        </Layer>
         <Layer ref={layerRef}>
           <Transformer
             ref={transformerRef}
           />
           {
-            [...nodes.values()].map(node => drawNodes(node))
+            [...nodes.values()].map(node => drawShapeNodes(node))
           }
         </Layer>
       </Stage>
