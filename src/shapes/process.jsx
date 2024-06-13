@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Text, Rect, Transformer } from 'react-konva';
+import { Text, Rect, Transformer, Group } from 'react-konva';
 import ConnectionHandlerBox from './connectionHandlerBox'
 import { DISTANCE, SPILL } from '../utils';
 
@@ -21,12 +21,13 @@ const ProcessItem = ({
     transformerRef,
     handleConnectionEnd,
 }) => {
+    const [showTransform, setShowTransformer] = useState(true)
     const [showConnectionHandles, setShowConnectionHandles] = useState(false)
     const [x, setX] = useState(node?.x || 0)
     const [y, setY] = useState(node?.y || 0)
     const [w, setW] = useState(node?.w || 120)
     const [h, setH] = useState(node?.h || 80)
-    
+
     useEffect(() => {
         if (node) {
             setX(node.x)
@@ -37,30 +38,32 @@ const ProcessItem = ({
     }, [node])
 
     return (
-        <React.Fragment key={node.id}>
+        <Group
+            key={node.id}
+            x={x}
+            y={y}
+            draggable
+            onDragStart={e => setShowConnectionHandles(false)}
+            onDragEnd={e => setShowConnectionHandles(true)}
+            onDragMove={(e) => handleDragEnd(node.id, e)}
+            onDblClick={() => setShowTransformer(node.id)}
+        >
             <Rect
-                x={x + SPILL}
-                y={y + SPILL}
-                width={w - (SPILL * 2)}
-                height={h - (SPILL * 2)}
+                width={w}
+                height={h}
                 fill={FILL_COLOR}
                 stroke={STROKE_COLOR}
                 strokeWidth={2}
-                listening={false}
             />
             <Text
-                x={x + w / 2}
-                y={y + h / 2}
                 width={w}
-                // height={h - (SPILL * 2)}
+                height={h}
                 text={node?.keyname}
                 fontSize={14}
                 fontFamily="Arial"
                 fill="black"
                 align="center"
                 verticalAlign="middle"
-                // offsetX={w / 10}
-                // offsetY={h / 10}
                 listening={false}
             />
             <ConnectionHandlerBox
@@ -81,45 +84,11 @@ const ProcessItem = ({
                     setConnectingShapeId(node.id);
                 }}
             />
-            <Rect
-                id={node.id}
-                x={x - DISTANCE}
-                y={y - DISTANCE}
-                width={w + (2 * DISTANCE)}
-                height={h + (2 * DISTANCE)}
-                stroke={STROKE_COLOR}
-                strokeWidth={0}
-                onDragMove={(e) => handleDragEnd(node.id, e)}
-                listening={true}
-                onDblClick={() => handleSelect(node.id)}
-                onDragEnd={e => {/** USE THIS FOR UPDATING */}}
-                draggable
-                ref={(nodeRef) => {
-                    if (selectedShape === node.id && nodeRef) {
-                        transformerRef.current.nodes([nodeRef]);
-                        transformerRef.current.getLayer().batchDraw();
-                    }
-                }}
-                onMouseEnter={(e) => {
-                    setHandlesVisibleId(node.id);
-                    setShowConnectionHandles(true)
-                    setHandlesPosition({ x: e.target.x(), y: e.target.y() });
-                }}
-                onMouseLeave={() => {
-                    setHandlesVisibleId(null);
-                    setShowConnectionHandles(false)
-                    setConnectingShapeId(null);
-                }}
-                onMouseDown={() => {
-                    setConnectingShapeId(node.id);
-                }}
-                
-                pointerEvents="none"
-            />
-            {selectedShape && (
+            {showTransform && (
                 <Transformer
                     ref={transformerRef}
                     boundBoxFunc={(oldBox, newBox) => {
+                        console.log(oldBox, newBox)
                         if (newBox.width < 5 || newBox.height < 5) {
                             return oldBox;
                         }
@@ -129,7 +98,7 @@ const ProcessItem = ({
                     }}
                 />
             )}
-        </React.Fragment>
+        </Group>
     )
 }
 
