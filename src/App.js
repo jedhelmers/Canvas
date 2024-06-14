@@ -4,7 +4,7 @@ import ProcessItem from './shapes/process'
 import WorkflowItem from './shapes/workflow'
 import Toolbar from './shapes/toolbar';
 import Grid from './shapes/grid';
-import { DISTANCE, PADDING, metadataItem } from './utils';
+import { DISTANCE, PADDING, metadataItem, createAdvancedOrthogonalPath } from './utils';
 import useGraph from './useGraph';
 import './App.css';
 
@@ -271,7 +271,7 @@ const App = ({ itemId = 0}) => {
   };
 
   const setToFromLocs = (id, pos) => {
-    // console.log(pos)
+    console.log({pos})
 
     if (id && !toFrom.includes(id)) {
       if (!toFrom[0]?.id) {
@@ -297,46 +297,6 @@ const App = ({ itemId = 0}) => {
         setToFrom([null, null])
       }
     }
-  }
-
-  const createAdvancedOrthogonalPath = (startPoint, endPoint, middlePoint = null) => {
-    const path = [startPoint];
-    const [startX, startY] = startPoint;
-    const [endX, endY] = endPoint;
-
-    // Determine the direction to extend the padding
-    const horizontalPadding = startX < endX ? PADDING : -PADDING;
-    const verticalPadding = startY < endY ? PADDING : -PADDING;
-
-    // Extend outward by PADDING pixels before bending
-    if (Math.abs(endX - startX) > Math.abs(endY - startY)) {
-      // Horizontal path
-      path.push([startX + horizontalPadding, startY]);
-
-      if (middlePoint) {
-        path.push([middlePoint[0], startY + verticalPadding]);
-        path.push(middlePoint);
-        path.push([middlePoint[0], endY - verticalPadding]);
-      } else {
-        path.push([endX - horizontalPadding, startY]);
-      }
-    } else {
-      // Vertical path
-      path.push([startX, startY + verticalPadding]);
-
-      if (middlePoint) {
-        path.push([startX + horizontalPadding, middlePoint[1]]);
-        path.push(middlePoint);
-        path.push([endX - horizontalPadding, middlePoint[1]]);
-      } else {
-        path.push([startX, endY - verticalPadding]);
-      }
-    }
-
-    // Finally, move to the end point
-    path.push(endPoint);
-
-    return path;
   }
 
   useEffect(() => {
